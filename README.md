@@ -1,6 +1,5 @@
 #  — Instruções para Rodar
 
-![Coração pixelado](https://cdn-icons-png.flaticon.com/512/833/833472.png)
 
 ---
 
