@@ -1,4 +1,4 @@
-#  — Instruções para Rodar
+#  ⛷️ Instruções para executar o jogo
 
 
 ---
