@@ -1,0 +1,2972 @@
+jmp main
+
+; Os delays foram alterados para agirem de acordo com um processador de 10 MHz
+
+;********************************************************
+;                       STRINGS
+;********************************************************
+
+Msn0: string "Pressione" 							; Msg do começo 1
+Msn01: string "ENTER"								; Msg do começo 1.1
+Msn001: string "para iniciar"						; Msg do começo 1.2
+Msn1: string "Voce nao pode desistir ainda!" 		; Msg de derrota 1
+Msn2: string "Tenha" 								; Msg de derrota 2
+Msn02: string "DETERMINACAO"						; Msg de derrota 2.1
+Msn002: string "..."								; Msg de derrota 2.2
+Msn3: string "Tentar novamente? <s/n>" 				; Msg de derrota 3
+Msn4: string "Saudacoes," 							; Msg de vitória 1
+Msn04: string "JOGADOR"								; Msg de vitória 1.1
+Msn004: string "."									; Msg de vitória 1.2
+Msn5: string "Nao nos resta mais nada aqui."		; Msg de vitória 2
+Msn6: string "Vamos" 								; Msg de vitória 3
+Msn06: string "APAGAR"								; Msg de vitória 3.1
+Msn006: string "este mundo sem sentido"				; Msg de vitória 3.2
+Msn7: string "e seguir para o" 						; Msg de vitória 4
+Msn07: string "PROXIMO"								; Msg de vitória 4.1
+Msn007: string "."									; Msg de vitória 4.2
+Msn8: string "APAGAR" 								; Msg de vitória 5
+Msn08: string "esse mundo e"						; Msg de vitória 5.1
+Msn008: string "seguir para o"						; Msg de vitória 6
+Msn0008: string "PROXIMO"							; Msg de vitória 6.1
+Msn00008: string "?"								; Msg de vitória 6.2
+Msn9: string "(Jogar novamente?)" 					; Msg de vitória 7
+Msn09: string "<s/n>"								; Msg de vitória 7.1
+Msn10: string "MUITO BEM." 							; Msg caso sim 1
+Msn11: string "..." 								; Msg caso não 1
+Msn12: string "Que curioso." 						; Msg caso não 2
+Msn13: string "Voce deve ter entendido errado." 	; Msg caso não 3
+Msn14: string "VOCE NUNCA ESTEVE NO CONTROLE." 		; Msg caso não 4
+Msn15: string "V O C E   V E N C E U !"				; Msg vitoria 0
+
+;----------------------------------
+
+;********************************************************
+;                       VARIÁVEIS
+;********************************************************
+
+Letra: var #1		    	; Contém uma letra a ser digitada
+
+posPlayer: var #1			; Contém a posicao atual do Player
+posAntPlayer: var #1		; Contém a posicao anterior do Player
+
+Flag_Dano: var #1			; Determina se o Player pode ou não tomar dano
+VidaPlayer: var #1			; Define a vida do Player
+
+Contador_Flag: var #1		; Determina qual ataque está sendo usado
+Flag_Ataque: var #1			; Determina se algum ataque está ou não sendo usado
+Contador_Ataques: var #1	; Variável que armazena a quantidade de ataques já feitos
+
+
+IncRand: var #1			    ; Incremento para circular na Tabela de nr. Randomicos
+Rand : var #30			    ; Tabela de nr. Randomicos entre 0 - 10 (11 ataques no total)
+    static Rand + #0, #4
+    static Rand + #1, #8
+    static Rand + #2, #2
+    static Rand + #3, #10
+    static Rand + #4, #1
+    static Rand + #5, #3
+    static Rand + #6, #6
+    static Rand + #7, #9
+    static Rand + #8, #0
+    static Rand + #9, #5
+    static Rand + #10, #2
+    static Rand + #11, #7
+    static Rand + #12, #10
+    static Rand + #13, #1
+    static Rand + #14, #4
+    static Rand + #15, #9
+    static Rand + #16, #8
+    static Rand + #17, #6
+    static Rand + #18, #2
+    static Rand + #19, #3
+    static Rand + #20, #0
+    static Rand + #20, #5
+    static Rand + #21, #10
+    static Rand + #22, #4
+    static Rand + #23, #6
+    static Rand + #24, #1
+    static Rand + #25, #7
+    static Rand + #26, #2
+    static Rand + #27, #8
+    static Rand + #28, #9
+    static Rand + #29, #0
+
+
+
+;----------------------------------
+
+;********************************************************
+;                       MAIN
+;********************************************************
+
+main:
+
+	call ApagaTela				; Apaga a tela
+
+	call IniciaJogo				; Espera o usuário apertar enter para começar o jogo
+
+	call ApagaTela				; Apaga o menu de incício
+
+	loadn r1, #tela1Linha0		; Endereço da primeira linha da tela 1
+	loadn r2, #0   				; Determina a cor
+	call ImprimeTela   			; Rotina de impressão de cenário na tela inteira
+
+	loadn r0, #580			
+	store posPlayer, r0			; Redefine posição inicial do Player para o meio da tela
+	store posAntPlayer, r0		; Redefine posição anterior inicial do Player para o meio da tela
+	call MovePlayer_Desenha		; Desenha o Player nessa posição inicial
+
+	loadn r0, #0
+	store Flag_Dano, r0			; O player pode levar dano enquanto essa flag for 0	
+	store Flag_Ataque, r0		; Nenhum ataque sendo usado inicialmente
+	store Contador_Ataques, r0	; Salva a quantidade de ataques que já aconteceram na memória
+
+	loadn r0, #11				; Tem que colocar o ataque final aq pq a ordem começa com +1
+	store Contador_Flag, r0		; Determina qual ataque será usado
+
+	loadn r0, #3				; Determina a vida inicial do Player
+	store VidaPlayer, r0		; Define a vida do Player
+
+	loadn r7, #0				; Contador para os Mods	= 0
+	loadn r6, #0				; Para verificar se (mod(c/10)==0
+
+	Loop:
+			
+		call MovePlayer				; Chama a função de movimentação do Player
+
+		call Delay					; Chama a função de delay
+
+		load r0, VidaPlayer
+		loadn r1, #0
+		cmp r0, r1
+		jeq Derrota					; Se o vida do Player chegar a 0, ele perde
+
+		load r0, Contador_Ataques
+		loadn r1, #20				; Quantidade de ataques que o player tem que sobreviver até a vitória +1
+		cmp r0, r1
+		jeq Vitoria					; Se o Player sobreviver essa quantidade de ataques, vence
+
+		call Ataque					; Chama a função de ataques/avisos
+
+		; O jogo foi programado de forma que há turnos em que acontece o ataques e que não acontecem ataques
+		; O turno de ataque ocorre quando a flag do ataque é = 1
+		; O turno sem ataques ocorrem quando a flag do ataque é = 0
+		loadn r3, #15				; Define a duração dos turnos, deve ser alterada junto com o próximo 'loadn'
+		mod r3, r7, r3
+		cmp r3, r6
+		ceq Flag_Ataque1			; No turno dos ataques, a flag de ataque é definida para 1
+
+		loadn r3, #30				; Define a duração dos turnos, deve ser o dobro do primeiro 'loadn' para que a duração dos turnos seja a mesma
+		mod r3, r7, r3
+		cmp r3, r6
+		ceq Flag_Ataque0			; No turno sem ataques, a flag de ataque é definida para 0
+		cmp r3, r6
+		ceq Flag_Dano0				; No turno sem ataques, a flag do dano é zerada para que o Player possa tomar dano
+		cmp r3, r6
+		ceq Contador_Flag_Recalcula ; No turno sem ataques, recalcula o contador de flags, para que determine o próximo ataque
+		cmp r3, r6
+		ceq IncContador_Ataques		; No turno sem ataques, incrementa o contador de ataques, quando esse valor chega ao determinado anteriormente, o Player vence
+
+		; No turno sem ataques, a tela é apagada e redesenhada para que os ataques possam ser apagados
+		cmp r3, r6
+		ceq ApagaTela				; Apaga a tela
+		loadn r1, #tela1Linha0		; Endereço da primeira linha da tela 1
+		loadn r2, #0   				; Determina a cor
+		cmp r3, r6
+		ceq ImprimeTela   			; Rotina de impressão de cenário na tela inteira
+		cmp r3, r6
+		ceq MovePlayer_Desenha		; Redesenha o Player onde estava
+
+		inc r7						; Aumenta o contador de mods
+	
+		jmp Loop					; Loopa
+
+;----------------------------------
+
+;********************************************************
+;             FUNÇÃO QUE MOVE O PLAYER
+;********************************************************
+
+MovePlayer:
+
+	push r0
+	push r1
+	
+	call MovePlayer_RecalculaPos	; Recalcula posição do Player
+
+	load r0, posPlayer
+	load r1, posAntPlayer
+	cmp r0, r1
+	jeq MovePlayer_Skip           ; Só apaga e redesenha se a posição atual (posPlayer) for diferente da posição anterior (posAntPlayer)
+		call MovePlayer_Apaga     ; Apaga o Player
+		call MovePlayer_Desenha   ; Redesenha o Player
+
+    MovePlayer_Skip:
+    
+	pop r1
+	pop r0
+
+	rts
+
+;----------------------------------
+	
+MovePlayer_Apaga:		; Apaga o Player e preserva o cenário
+	
+    push r0
+	push r1
+	push r2
+	push r3
+	push r4
+	push r5
+
+	load r0, posAntPlayer	; r0 = posAntPlayer
+	loadn r1, #tela0Linha0	; Endereço em que começa a primeira linha do cenário
+	add r2, r1, r0	; r2 = Tela0Linha0 + posAnt
+	loadn r4, #40
+	div r3, r0, r4	; r3 = posAnt/40
+	add r2, r2, r3	; r2 = Tela0Linha0 + posAnt + posAnt/40 --> Tem que somar esse posAnt/40 porque as linhas da string terminam em \0
+	
+	loadi r5, r2	; r5 = Caractere que estava no cenário na posAnt
+	outchar r5, r0	; Apaga o objeto na tela e substitui pelo caractere correspondente na memória do cenário
+	
+	pop r5
+	pop r4
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+	
+    rts
+
+;----------------------------------
+	
+MovePlayer_RecalculaPos:	; Recalcula a posição do Player em função das teclas pressionadas
+	
+    push r0
+	push r1
+	push r2
+	push r3
+
+	load r0, posPlayer         		; r0 recebe a posição do Player
+	
+	inchar r1						; Lê o teclado pra controlar a nave
+
+	loadn r2, #37                  	; Caso a tecla seja setinha pra esquerda
+	cmp r1, r2
+	jeq MovePlayer_RecalculaPos_A
+	
+	loadn r2, #39                  	; Caso a tecla seja setinha pra direita
+	cmp r1, r2
+	jeq MovePlayer_RecalculaPos_D
+    	
+	loadn r2, #38                 	; Caso a tecla seja setinha pra cima
+	cmp r1, r2
+	jeq MovePlayer_RecalculaPos_W
+		
+	loadn r2, #40                  	; Caso a tecla seja setinha pra baixo
+	cmp r1, r2
+	jeq MovePlayer_RecalculaPos_S
+
+	loadn r2, #'z'					; Caso a tecla seja 'z'
+	cmp r1, r2
+	jeq Derrota						; Apenas para testes
+
+	loadn r2, #'x'					; Caso a tecla seja 'x'
+	cmp r1, r2
+	jeq Vitoria						; Apenas para testes
+	
+    MovePlayer_RecalculaPos_Fim:	; Se nenhuma tecla válida for pressionada, sai
+        
+        store posPlayer, r0			; Salva a posição do Player
+        
+        pop r3
+        pop r2
+        pop r1
+        pop r0
+
+        rts
+
+    MovePlayer_RecalculaPos_A:	; Move o Player pra esquerda
+        
+        loadn r1, #40
+        loadn r2, #11
+        mod r1, r0, r1		
+        cmp r1, r2                          ; Testa condições do contorno
+        jeq MovePlayer_RecalculaPos_Fim     ; Se posPlayer % 40 == 0 (se o Player estiver na primeira posição da linha), não pode ir pra esquerda
+        dec r0	                            ; Caso contrário, posPlayer = posPlayer - 1
+        jmp MovePlayer_RecalculaPos_Fim
+
+    MovePlayer_RecalculaPos_D:	; Move o Player pra direita	
+        
+        loadn r1, #40
+        loadn r2, #28
+        mod r1, r0, r1		    
+        cmp r1, r2                          ; Testa condições do contorno
+        jeq MovePlayer_RecalculaPos_Fim     ; Se posPlayer % 40 == 39 (se o Player estiver na última posição da linha), não pode ir pra direita
+        inc r0                              ; Caso contrário, posPlayer = posPlayer + 1
+        jmp MovePlayer_RecalculaPos_Fim
+
+    MovePlayer_RecalculaPos_W:	; Move o Player pra cima
+        
+        loadn r1, #280
+		loadn r2, #40
+        cmp r0, r1		                    ; Testa condições do contorno 
+        jle MovePlayer_RecalculaPos_Fim     ; Se posPlayer < 280 (se o Player estiver na linha de cima da caixa), não pode ir pra cima
+        sub r0, r0, r2  	                ; Caso contrário, posPlayer = posPlayer - 40
+        jmp MovePlayer_RecalculaPos_Fim
+
+    MovePlayer_RecalculaPos_S:	; Move o Player pra baixo
+        
+        loadn r1, #919
+		loadn r2, #40
+        cmp r0, r1		                    ; Testa condições do contorno 
+        jgr MovePlayer_RecalculaPos_Fim     ; Se posPlayer > 919 (se o Player estiver na linha de baixo da caixa), não pode ir pra baixo
+        add r0, r0, r2	                    
+        jmp MovePlayer_RecalculaPos_Fim		; Caso contrário, posPlayer = posPlayer + 40
+
+;----------------------------------
+
+MovePlayer_Desenha:	        ; Desenha o caractere do Player
+
+	push r0
+	push r1
+	
+	loadn r1, #5889	        ; Caractere que representará o Player
+    load r0, posPlayer
+	outchar r1, r0
+	store posAntPlayer, r0	; Atualiza posição anterior do Player para ser = posição atual
+	
+	pop r1
+	pop r0
+
+	rts
+
+;----------------------------------
+
+;********************************************************
+;                  FUNÇÃO DOS ATAQUES
+;********************************************************
+
+Ataque:
+
+	push r0
+	push r1
+	push r2
+	push r3
+	push r4
+	push r5
+	push r6
+	push r7
+
+	load r1, Flag_Ataque
+	loadn r2, #0
+	cmp r1, r2
+	ceq Aviso	; Se a flag for 0, chama a função de avisos e sai da função de ataque
+	cmp r1, r2
+	jeq Ataque_FimSwitch
+
+	; Compara cada valor com o contador de flag e determina o ataque a ser usado
+	load r1, Contador_Flag
+	
+	loadn r2, #0
+	cmp r1, r2
+	jeq Ataque_Case1
+
+	loadn r2, #1
+	cmp r1, r2
+	jeq Ataque_Case2
+
+	loadn r2, #2
+	cmp r1, r2
+	jeq Ataque_Case3
+
+	loadn r2, #3
+	cmp r1, r2
+	jeq Ataque_Case4
+
+	loadn r2, #4
+	cmp r1, r2
+	jeq Ataque_Case5
+
+	loadn r2, #5
+	cmp r1, r2
+	jeq Ataque_Case6
+
+	loadn r2, #6
+	cmp r1, r2
+	jeq Ataque_Case7
+
+	loadn r2, #7
+	cmp r1, r2
+	jeq Ataque_Case8
+	
+	loadn r2, #8
+	cmp r1, r2
+	jeq Ataque_Case9
+	
+	loadn r2, #9
+	cmp r1, r2
+	jeq Ataque_Case10
+	
+	loadn r2, #10
+	cmp r1, r2
+	jeq Ataque_Case1_11
+
+	; Case 1 : Blaster na esquerda
+	Ataque_Case1:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1180     	            ; Posição de início do ataque
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #11       	            ; Coluna final do ataque
+
+		Ataque_Case1_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case1	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case1_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case1:
+				
+				cmp r1, r3
+				jel Ataque_Case11	        ; Se tiver chegado no início da tela (linha 0, coluna final), sai do ataque
+
+				loadn r5, #31			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case1_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case11:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1178     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #13       	        ; Coluna final do ataque
+
+		Ataque_Case11_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case11	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case11_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case11:
+				
+				cmp r1, r3
+				jel Ataque_Case1_Fim	    ; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #35			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case11_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case1_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 2 : Blaster na direita
+	Ataque_Case2:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1189     	            ; Posição de início do ataque
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #20       	            ; Coluna final do ataque
+
+		Ataque_Case2_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case2	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case2_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case2:
+				
+				cmp r1, r3
+				jel Ataque_Case22	        ; Se tiver chegado no início da tela, sai do ataque
+
+				loadn r5, #31			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case2_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case22:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1187     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #22       	        ; Coluna final do ataque
+
+		Ataque_Case22_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case22	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case22_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case22:
+				
+				cmp r1, r3
+				jel Ataque_Case2_Fim	    ; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #35			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case22_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case2_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 3 : Blaster em baixo
+	Ataque_Case3:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #960     	                ; Posição de início do ataque
+		loadn r3, #600       	            ; Posição final do ataque
+
+		Ataque_Case3_Loop:
+		
+			cmp r1, r3
+			jeq Ataque_Case33
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case3_Loop		    ; Loopa
+			
+		Ataque_Case33:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #880     	            ; Posição de início do ataque
+			loadn r3, #680       	        ; Posição final do ataque
+
+			Ataque_Case33_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case3_Fim        ; Se tiver chegado na posição final, sai do ataque
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+			
+				jmp Ataque_Case33_Loop		; Loopa
+
+		Ataque_Case3_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 4 : Blaster em cima
+	Ataque_Case4:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #600     	                ; Posição de início do ataque
+		loadn r3, #240       	            ; Posição final do ataque
+
+		Ataque_Case4_Loop:
+
+			cmp r1, r3
+			jeq Ataque_Case44
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case4_Loop		    ; Loopa
+			
+		Ataque_Case44:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #520     	            ; Posição de início do ataque
+			loadn r3, #320       	        ; Posição final do ataque
+
+			Ataque_Case44_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case4_Fim        ; Se tiver chegado na posição final, sai do ataque
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+                
+				jmp Ataque_Case44_Loop		; Loopa
+
+		Ataque_Case4_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 5 : Blaster em cima e na direita
+	Ataque_Case5:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #600     	                ; Posição de início do ataque
+		loadn r3, #240       	            ; Posição final do ataque
+
+		Ataque_Case5_Loop:
+
+			cmp r1, r3
+			jeq Ataque_Case55
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case5_Loop		    ; Loopa
+			
+	Ataque_Case55:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1189     	            ; Posição de início da coluna = 1189 - 1
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #20       	            ; Coluna final do ataque
+
+		Ataque_Case55_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case55	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case55_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case55:
+				
+				cmp r1, r3
+				jel Ataque_Case5_5	        
+
+				loadn r5, #31			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case55_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case5_5:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #520     	            ; Posição de início do ataque
+			loadn r3, #320       	        ; Posição final do ataque
+
+			Ataque_Case5_5_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case5_55
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+                
+				jmp Ataque_Case5_5_Loop		; Loopa
+
+		Ataque_Case5_55:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1187     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #22       	        ; Coluna final do ataque
+
+		Ataque_Case5_55_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case5_55	; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case5_55_Loop		; Loopa
+
+			Reajusta_Ataque_Case5_55:
+				
+				cmp r1, r3
+				jel Ataque_Case5_Fim	    ; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #35			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case5_55_Loop	; Loopa até chegar no início da tela
+
+		Ataque_Case5_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 6 : Blaster em cima e na esquerda
+	Ataque_Case6:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #600     	                ; Posição de início do ataque
+		loadn r3, #240       	            ; Posição final do ataque
+
+		Ataque_Case6_Loop:
+
+			cmp r1, r3
+			jeq Ataque_Case66
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case6_Loop		    ; Loopa
+			
+	Ataque_Case66:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1180     	            ; Posição de início do ataque
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #11       	            ; Coluna final do ataque
+
+		Ataque_Case66_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case66	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case66_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case66:
+				
+				cmp r1, r3
+				jel Ataque_Case6_6	        
+
+				loadn r5, #31			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case66_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case6_6:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #520     	            ; Posição de início do ataque
+			loadn r3, #320       	        ; Posição final do ataque
+
+			Ataque_Case6_6_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case6_66
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+                
+				jmp Ataque_Case6_6_Loop		; Loopa
+
+		Ataque_Case6_66:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1178     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #13       	        ; Coluna final do ataque
+
+		Ataque_Case6_66_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case6_66	; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case6_66_Loop		; Loopa
+
+			Reajusta_Ataque_Case6_66:
+				
+				cmp r1, r3
+				jel Ataque_Case6_Fim	    ; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #35			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case6_66_Loop	; Loopa até chegar no início da tela
+
+		Ataque_Case6_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 7 : Blaster em baixo e na direita
+	Ataque_Case7:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #960     	                ; Posição de início
+		loadn r3, #600       	            ; Posição final
+
+		Ataque_Case7_Loop:
+
+			cmp r1, r3
+			jeq Ataque_Case77
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case7_Loop		    ; Loopa
+			
+	Ataque_Case77:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1189     	            ; Posição de início do ataque
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #20       	            ; Coluna final do ataque
+
+		Ataque_Case77_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case77	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case77_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case77:
+				
+				cmp r1, r3
+				jel Ataque_Case7_7	        
+
+				loadn r5, #31			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case77_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case7_7:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #880     	            ; Posição de início do ataque
+			loadn r3, #680       	        ; Posição final do ataque
+
+			Ataque_Case7_7_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case7_77
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+                
+				jmp Ataque_Case7_7_Loop		; Loopa
+	
+		Ataque_Case7_77:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1187     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #22       	        ; Coluna final do ataque
+
+		Ataque_Case7_77_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case7_77	; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case7_77_Loop		; Loopa
+
+			Reajusta_Ataque_Case7_77:
+				
+				cmp r1, r3
+				jel Ataque_Case7_Fim	    ; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #35			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case7_77_Loop	; Loopa até chegar no início da tela
+
+		Ataque_Case7_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 8 : Blaster em baixo e na esquerda
+	Ataque_Case8:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #960     	                ; Posição de início do ataque
+		loadn r3, #600       	            ; Posição final do ataque
+
+		Ataque_Case8_Loop:
+
+			cmp r1, r3
+			jeq Ataque_Case88
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case8_Loop		    ; Loopa
+			
+	Ataque_Case88:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1180     	            ; Posição de início do ataque
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #11       	            ; Coluna final do ataque
+
+		Ataque_Case88_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case88	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case88_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case88:
+				
+				cmp r1, r3
+				jel Ataque_Case8_8	        
+
+				loadn r5, #31			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case88_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case8_8:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #880     	            ; Posição de início do ataque
+			loadn r3, #680       	        ; Posição final do ataque
+
+			Ataque_Case8_8_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case8_88
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+                
+				jmp Ataque_Case8_8_Loop		; Loopa
+	
+		Ataque_Case8_88:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1178     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #13       	        ; Coluna final do ataque
+
+		Ataque_Case8_88_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case8_88	; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case8_88_Loop		; Loopa
+
+			Reajusta_Ataque_Case8_88:
+				
+				cmp r1, r3
+				jel Ataque_Case8_Fim	    ; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #35			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case8_88_Loop	; Loopa até chegar no início da tela
+
+		Ataque_Case8_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 9 : Blaster no meio vertical e horizontal
+	Ataque_Case9:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #760    	                ; Posição de início do ataque
+		loadn r3, #440       	            ; Posição final do ataque
+
+		Ataque_Case9_Loop:
+
+			cmp r1, r3
+			jeq Ataque_Case99
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case9_Loop		    ; Loopa
+			
+	Ataque_Case99:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1184     	            ; Posição de início do ataque
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #16       	            ; Coluna final do ataque
+
+		Ataque_Case99_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case99	    ; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case99_Loop		    ; Loopa
+
+			Reajusta_Ataque_Case99:
+				
+				cmp r1, r3
+				jel Ataque_Case9_9	        
+
+				loadn r5, #32			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case99_Loop	    ; Loopa até chegar no início da tela
+
+		Ataque_Case9_9:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #680     	            ; Posição de início do ataque
+			loadn r3, #520       	        ; Posição final do ataque
+
+			Ataque_Case9_9_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case9_99
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+                
+				jmp Ataque_Case9_9_Loop		; Loopa
+	
+		Ataque_Case9_99:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1182     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #18       	        ; Coluna final do ataque
+
+		Ataque_Case9_99_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case9_99	; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case9_99_Loop		; Loopa
+
+			Reajusta_Ataque_Case9_99:
+				
+				cmp r1, r3
+				jel Ataque_Case9_Fim	    ; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #36			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case9_99_Loop	; Loopa até chegar no início da tela
+
+		Ataque_Case9_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	; Case 10 : Blaster no meio horizontal
+	Ataque_Case10:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #760     	                ; Posição de início do ataque
+		loadn r3, #440       	            ; Posição final do ataque
+
+		Ataque_Case10_Loop:
+		
+			cmp r1, r3
+			jeq Ataque_Case1010
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case10_Loop		    ; Loopa
+			
+		Ataque_Case1010:
+
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #680     	            ; Posição de início do ataque
+			loadn r3, #520       	        ; Posição final do ataque
+
+			Ataque_Case1010_Loop:
+
+				cmp r1, r3
+				jeq Ataque_Case10_Fim       ; Se tiver chegado na posição final, sai do ataque
+
+				dec r1						; Decremento em r1
+				outchar r0, r1				; Caractere escolhido sai na posição de r1
+				
+                load r6, posPlayer          ; Carrega a posição do Player
+                cmp r6, r1                  ; Compara com a posição do ataque
+                ceq Dano                    ; Se for igual, o Player toma dano
+                cmp r6, r1                  
+                ceq MovePlayer_Desenha      ; Se for igual, desenha o Player em cima do ataque
+                
+				jmp Ataque_Case1010_Loop    ; Loopa
+
+		Ataque_Case10_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	
+	; Case 11 : Blaster na meio vertical
+	Ataque_Case1_11:
+
+		loadn r0, #10      	                ; Caractere do Outchar
+		loadn r1, #1184     	            ; Posição de início do ataque
+		loadn r2, #40                       ; Valor de divisão (para determinar o número da coluna)
+		loadn r3, #16       	            ; Coluna final do ataque
+
+		Ataque_Case1_11_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case1_11	; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case1_11_Loop		; Loopa
+
+			Reajusta_Ataque_Case1_11:
+				
+				cmp r1, r3
+				jel Ataque_Case11_11	    
+
+				loadn r5, #32			    ; Valor de reajuste
+				sub r1, r1, r5			    ; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case1_11_Loop	; Loopa até chegar no início da tela
+
+		Ataque_Case11_11:
+			
+			loadn r0, #125      	        ; Caractere do Outchar
+			loadn r1, #1182     	        ; Posição de início do ataque
+			loadn r2, #40                   ; Valor de divisão (para determinar o número da coluna)
+			loadn r3, #18       	        ; Coluna final do ataque
+
+		Ataque_Case11_11_Loop:
+
+			mod r4, r1, r2
+			cmp r4, r3                      ; Compara o valor da coluna atual com a final
+			jeq Reajusta_Ataque_Case11_11	; Se tiver chegado no final da coluna, reajusta ela
+
+			dec r1						    ; Decremento em r1
+			outchar r0, r1				    ; Caractere escolhido sai na posição de r1
+            
+			load r6, posPlayer              ; Carrega a posição do Player
+			cmp r6, r1                      ; Compara com a posição do ataque
+			ceq Dano                        ; Se for igual, o Player toma dano
+			cmp r6, r1                  
+			ceq MovePlayer_Desenha          ; Se for igual, desenha o Player em cima do ataque
+			
+			jmp Ataque_Case11_11_Loop		; Loopa
+
+			Reajusta_Ataque_Case11_11:
+				
+				cmp r1, r3
+				jel Ataque_Case11_Fim		; Se tiver chegado na posição final, sai do ataque
+
+				loadn r5, #36				; Valor de reajuste
+				sub r1, r1, r5				; r1 = r1 - valor de reajuste
+
+				jmp Ataque_Case11_11_Loop	; Loopa até chegar no início da tela
+
+		Ataque_Case11_Fim:
+		
+			jmp Ataque_FimSwitch		    ; Break do Switch
+
+	Ataque_FimSwitch:
+
+		pop r7
+		pop r6
+		pop r5
+		pop r4
+		pop r3
+		pop r2
+		pop r1
+		pop r0
+
+        rts
+
+;----------------------------------
+
+IncContador_Ataques:
+
+	push r0
+
+	load r0, Contador_Ataques   ; Carrega o contador de ataques
+	inc r0						; Incrementa o contador de ataques no final do turno de ataque
+	store Contador_Ataques, r0  ; Salva o novo valor do contador de ataques
+
+	pop r0
+
+	rts
+
+;----------------------------------
+
+Flag_Ataque0:
+
+	push r0
+
+	loadn r0, #0
+	store Flag_Ataque, r0	; Torna a flag de ataque = 0
+
+	pop r0
+
+	rts
+
+;----------------------------------
+
+Flag_Ataque1:
+
+	push r0
+
+	loadn r0, #1
+	store Flag_Ataque, r0	; Torna a flag de ataque = 1
+
+	pop r0
+
+	rts
+
+;----------------------------------
+
+Contador_Flag_Recalcula:
+	
+	push r0
+	push r1
+	push r2
+	push r3
+
+    ; Sorteia um número randômico de 0 - 10 (11 ataques no total)
+
+	loadn r0, #Rand		        ; Declara um ponteiro para a tabela Rand na memória
+	load r1, IncRand            ; Carrega o valor de incremento da tabela Rand
+	add r0, r0, r1              ; r0 = Rand + IncRand
+	loadi r3, r0                ; Busca número randômico na memória (r3 = Rand(IncRand))
+	inc r1                      ; Incrementa o valor do IncRand
+	loadn r2, #30				; Quantidade de elementos na tabela Rand
+	cmp r1, r2                  ; Compara o valor do IncRand com o final da tabela
+	jeg Contador_Flag_Reajusta	; Se o contador da flag for maior ou igual à quantidade de ataques, reinicia o inc rand nesse caso com a tabela
+	
+	store IncRand, r1           ; Se não, salva o valor do IncRand incrementado
+	store Contador_Flag, r3     ; Salva o valor do Contador_Flag
+	jmp Contador_Flag_Fim       
+
+	Contador_Flag_Reajusta:
+
+		loadn r0, #0
+		store IncRand, r0	; Zera o contador
+		jmp Contador_Flag_Fim
+
+	Contador_Flag_Fim:
+		
+		pop r3
+		pop r2
+		pop r1
+		pop r0
+
+		rts
+	
+
+;----------------------------------
+
+;********************************************************
+;                  FUNÇÃO DOS AVISOS
+;********************************************************
+
+Aviso:
+
+	push r0
+	push r1
+	push r2
+	push r3
+	push r4
+
+	; Compara cada valor do contador de flag e determina o aviso a ser utilizado
+
+	load r1, Contador_Flag
+
+	loadn r2, #0
+	cmp r1, r2
+	jeq Aviso_Case1
+
+	loadn r2, #1
+	cmp r1, r2
+	jeq Aviso_Case2
+
+	loadn r2, #2
+	cmp r1, r2
+	jeq Aviso_Case3
+
+	loadn r2, #3
+	cmp r1, r2
+	jeq Aviso_Case4
+
+	loadn r2, #4
+	cmp r1, r2
+	jeq Aviso_Case5
+
+	loadn r2, #5
+	cmp r1, r2
+	jeq Aviso_Case6
+
+	loadn r2, #6
+	cmp r1, r2
+	jeq Aviso_Case7
+
+	loadn r2, #7
+	cmp r1, r2
+	jeq Aviso_Case8
+	
+	loadn r2, #8
+	cmp r1, r2
+	jeq Aviso_Case9
+	
+	loadn r2, #9
+	cmp r1, r2
+	jeq Aviso_Case10
+	
+	loadn r2, #10
+	cmp r1, r2
+	jeq Aviso_Case1_11
+
+	; Case 1 : Blaster na esquerda
+	Aviso_Case1:
+
+		loadn r0, #15      				; Caractere do Outchar
+		loadn r1, #1020     			; Posição de início
+		loadn r3, #1011       			; Posição final
+
+		Aviso_Case1_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case11
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case1_Loop		; Loopa
+
+		Aviso_Case11:
+
+			loadn r0, #15     			; Caractere do Outchar
+			loadn r1, #180     			; Posição de início
+			loadn r3, #171       		; Posição final
+
+			Aviso_Case11_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case1_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case11_Loop	; Loopa
+
+		Aviso_Case1_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 2 : Blaster na direita
+	Aviso_Case2:
+
+		loadn r0, #14      				; Caractere do Outchar
+		loadn r1, #1029     			; Posição de início
+		loadn r3, #1020       			; Posição final
+
+		Aviso_Case2_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case22
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case2_Loop		; Loopa
+
+		Aviso_Case22:
+
+			loadn r0, #14      			; Caractere do Outchar
+			loadn r1, #189     			; Posição de início
+			loadn r3, #180      	 	; Posição final
+
+			Aviso_Case22_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case2_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case22_Loop	; Loopa
+
+		Aviso_Case2_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 3 : Blaster em baixo
+	Aviso_Case3:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #969	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #609       			; Posição final
+
+		Aviso_Case3_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case33
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case3_Loop		; Loopa
+
+		Aviso_Case33:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #990     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #630				; Posição final
+
+		Aviso_Case33_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case3_Fim			; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case33_Loop		; Loopa
+
+		Aviso_Case3_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 4 : Blaster em cima
+	Aviso_Case4:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #609	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #249       			; Posição final
+
+		Aviso_Case4_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case44
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case4_Loop		; Loopa
+
+		Aviso_Case44:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #630     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #270				; Posição final
+
+		Aviso_Case44_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case4_Fim			; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case44_Loop		; Loopa
+
+		Aviso_Case4_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 5 : Blaster em cima e na direita
+	Aviso_Case5:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #609	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #249       			; Posição final
+
+		Aviso_Case5_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case55
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case5_Loop		; Loopa
+
+		Aviso_Case55:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #630     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #270				; Posição final
+
+		Aviso_Case55_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case5_5			; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case55_Loop		; Loopa
+		
+	Aviso_Case5_5:
+
+		loadn r0, #14      				; Caractere do Outchar
+		loadn r1, #1029    			 	; Posição de início
+		loadn r3, #1020       			; Posição final
+
+		Aviso_Case5_5_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case5_55
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case5_5_Loop		; Loopa
+
+		Aviso_Case5_55:
+
+			loadn r0, #14      			; Caractere do Outchar
+			loadn r1, #189     			; Posição de início
+			loadn r3, #180       		; Posição final
+
+			Aviso_Case5_55_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case5_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case5_55_Loop	; Loopa
+
+		Aviso_Case5_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 6 : Blaster em cima e na esquerda
+	Aviso_Case6:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #609	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #249       			; Posição final
+
+		Aviso_Case6_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case66
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case6_Loop		; Loopa
+
+		Aviso_Case66:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #630     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #270				; Posição final
+
+		Aviso_Case66_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case6_6			; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case66_Loop		; Loopa
+		
+	Aviso_Case6_6:
+
+		loadn r0, #15      				; Caractere do Outchar
+		loadn r1, #1020     			; Posição de início
+		loadn r3, #1011     		  	; Posição final
+
+		Aviso_Case6_6_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case6_66
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case6_6_Loop		; Loopa
+
+		Aviso_Case6_66:
+
+			loadn r0, #15      			; Caractere do Outchar
+			loadn r1, #180   		  	; Posição de início
+			loadn r3, #171       		; Posição final
+
+			Aviso_Case6_66_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case6_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case6_66_Loop	; Loopa
+
+		Aviso_Case6_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 7 : Blaster em baixo e na direita
+	Aviso_Case7:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #969	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #609       			; Posição final
+
+		Aviso_Case7_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case77
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case7_Loop		; Loopa
+
+		Aviso_Case77:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #990     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #630				; Posição final
+
+		Aviso_Case77_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case7_7			; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case77_Loop		; Loopa
+		
+	Aviso_Case7_7:
+
+		loadn r0, #14      				; Caractere do Outchar
+		loadn r1, #1029     			; Posição de início
+		loadn r3, #1020       			; Posição final
+
+		Aviso_Case7_7_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case7_77
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case7_7_Loop		; Loopa
+
+		Aviso_Case7_77:
+
+			loadn r0, #14      			; Caractere do Outchar
+			loadn r1, #189     			; Posição de início
+			loadn r3, #180       		; Posição final
+
+			Aviso_Case7_77_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case7_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case7_77_Loop	; Loopa
+
+		Aviso_Case7_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+			
+	; Case 8 : Blaster em baixo e na esquerda
+	Aviso_Case8:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #969	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #609       			; Posição final
+
+		Aviso_Case8_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case88
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case8_Loop		; Loopa
+
+		Aviso_Case88:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #990     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #630				; Posição final
+
+		Aviso_Case88_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case8_8			; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case88_Loop		; Loopa
+		
+	Aviso_Case8_8:
+
+		loadn r0, #15      				; Caractere do Outchar
+		loadn r1, #1020     			; Posição de início
+		loadn r3, #1011       			; Posição final
+
+		Aviso_Case8_8_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case8_88
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case8_8_Loop		; Loopa
+
+		Aviso_Case8_88:
+
+			loadn r0, #15      			; Caractere do Outchar
+			loadn r1, #180     			; Posição de início
+			loadn r3, #171       		; Posição final
+
+			Aviso_Case8_88_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case8_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case8_88_Loop	; Loopa
+
+		Aviso_Case8_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 9 : Blaster no meio horizontal e vertical
+	Aviso_Case9:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #769	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #449       			; Posição final
+
+		Aviso_Case9_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case99
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case9_Loop		; Loopa
+
+		Aviso_Case99:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #790     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #470				; Posição final
+
+		Aviso_Case99_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case9_9			; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case99_Loop		; Loopa
+		
+	Aviso_Case9_9:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #1024     			; Posição de início
+		loadn r3, #1016       			; Posição final
+
+		Aviso_Case9_9_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case9_99
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case9_9_Loop		; Loopa
+
+		Aviso_Case9_99:
+
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #184     			; Posição de início
+			loadn r3, #176       		; Posição final
+
+			Aviso_Case9_99_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case9_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case9_99_Loop	; Loopa
+
+		Aviso_Case9_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	; Case 10 : Blaster no meio horizontal
+	Aviso_Case10:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #769	    			; Posição de início da coluna
+		loadn r2, #40
+		loadn r3, #449       			; Posição final
+
+		Aviso_Case10_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case1010
+
+			sub r1, r1, r2				; Decremento de r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+    		
+			jmp Aviso_Case10_Loop		; Loopa
+
+		Aviso_Case1010:
+			
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #790     			; Posição de início da coluna
+			loadn r2, #40
+			loadn r3, #470				; Posição final
+
+		Aviso_Case1010_Loop:
+
+			cmp r1, r3
+			jeq Aviso_Case10_Fim		; Se tiver chegado no final, mostra o segundo aviso
+
+			sub r1, r1, r2				; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+            
+			jmp Aviso_Case1010_Loop		; Loopa
+			
+		Aviso_Case10_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+		
+	; Case 11 : Blaster no meio vertical
+	Aviso_Case1_11:
+
+		loadn r0, #'!'      			; Caractere do Outchar
+		loadn r1, #1024     			; Posição de início
+		loadn r3, #1016       			; Posição final
+
+		Aviso_Case1_11_Loop:
+		
+			cmp r1, r3
+			jeq Aviso_Case11_11
+
+			dec r1						; Decremento em r1
+			outchar r0, r1				; Caractere determinado sai na posição de r1
+			
+			jmp Aviso_Case1_11_Loop		; Loopa
+
+		Aviso_Case11_11:
+
+			loadn r0, #'!'      		; Caractere do Outchar
+			loadn r1, #184     			; Posição de início
+			loadn r3, #176       		; Posição final
+
+			Aviso_Case11_11_Loop:
+
+				cmp r1, r3
+				jeq Aviso_Case11_Fim
+
+				dec r1					; Decremento em r1
+				outchar r0, r1			; Caractere determinado sai na posição de r1
+				
+				jmp Aviso_Case11_11_Loop; Loopa
+
+		Aviso_Case11_Fim:
+		
+			jmp Aviso_FimSwitch			; Break do Switch
+
+	Aviso_FimSwitch:
+
+        ; Sai dos avisos
+		pop r4
+		pop r3
+		pop r2
+		pop r1
+		pop r0
+
+		rts
+
+;----------------------------------
+
+;********************************************************
+;                     FUNÇÃO DE DANO
+;********************************************************
+
+Dano:
+
+	push r0
+	push r1
+
+	load r0, Flag_Dano      ; Carrega o valor da flag de dano
+	loadn r1, #1   
+	cmp r0, r1              ; Compara com 1 (se o player já tiver tomado dano no turno)
+	jeq Dano_Fim			; Se o Player já tiver tomado dano, não toma de novo
+
+	load r0, VidaPlayer     ; Carrega o valor da vida do Player
+	dec r0					; Decrementa a vida do Player
+	store VidaPlayer, r0    ; Salva o novo valor na memória
+
+	store Flag_Dano, r1		; Flag do dano = 1 (o Player não pode mais tomar dano no turno)
+
+	Dano_Fim:
+
+		pop r1
+		pop r0
+
+		rts
+
+;----------------------------------
+
+Flag_Dano0:
+
+	push r0
+
+	loadn r0, #0
+	store Flag_Dano, r0		; Torna o Flag de Dano = 0
+
+	pop r0
+
+	rts
+
+;----------------------------------
+
+;********************************************************
+;                  FUNÇÃO DE DERROTA
+;********************************************************
+
+Derrota:
+
+	call ApagaTela
+
+	loadn r1, #tela2Linha0	; Endereço da primeira linha da tela 4
+	loadn r2, #0   			; Determina a cor
+	call ImprimeTela   		; Rotina de impressão de cenário na tela inteira
+	
+	loadn r0, #725			; Posição que será impressa a string
+	loadn r1, #Msn1         ; "Voce nao pode desistir ainda!"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	call DelayMaior			; Pausa dramática
+
+	loadn r0, #809			; Posição que será impressa a string
+	loadn r1, #Msn2         ; "Tenha"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	loadn r0, #815			; Posição que será impressa a string
+	loadn r1, #Msn02        ; "DETERMINACAO"
+	loadn r2, #5888			; Cor vermelha
+	call ImprimeStrDelay
+
+	loadn r0, #827			; Posição que será impressa a string
+	loadn r1, #Msn002       ; "..."
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	call DelayMaior			; Pausa dramática
+
+	loadn r0, #928			; Posição que será impressa a string
+   	loadn r1, #Msn3         ; "Tentar novamente? <s/n>"
+   	loadn r2, #0			; Cor branca
+   	call ImprimeStrDelay
+
+	Derrota_Loop:
+
+        ; Espera o Player digitar 's' ou 'n'
+		call DigLetra
+
+        ; Se o Player digitar 'n'
+		loadn r0, #'n'  
+		load r1, Letra
+		cmp r0, r1
+		jeq Derrota_FimDeJogo
+
+        ; Se o Player digitar 's'
+		loadn r0, #'s'
+		cmp r0, r1
+		jne Derrota_Loop
+
+		call ApagaTela
+
+		pop r2
+		pop r1
+		pop r0
+		pop r0	; Dá um pop a mais para acertar o ponteiro da pilha, pois não vai dar o RTS (sem isso, dps de vários restarts, a pilha seria apagada por completo)
+			
+		jmp main ; Reinicia o programa
+
+
+	Derrota_FimDeJogo:
+
+		call ApagaTela
+
+		halt ; Para o programa
+
+;----------------------------------
+
+;********************************************************
+;                   FUNÇÃO DE VITORIA
+;********************************************************
+
+Vitoria:
+
+	call ApagaTela
+	call DelayMaior
+
+	loadn r0, #567			; Posição que será impressa a string
+	loadn r1, #Msn15      	; "V O C E   V E N C E U !"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	call DelayMaior
+	call DelayMaior         ; Pausa bem dramática
+	call ApagaTela
+	call DelayMaior
+	call DelayMaior
+
+	loadn r0, #570			; Posição que será impressa a string
+	loadn r1, #Msn4         ; "Saudacoes,"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	loadn r0, #581			; Posição que será impressa a string
+	loadn r1, #Msn04         ; "JOGADOR"
+	loadn r2, #5888			; Cor vermelha
+	call ImprimeStrDelay
+
+	loadn r0, #588			; Posição que será impressa a string
+	loadn r1, #Msn004         ; "."
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	call DelayMaior
+	call DelayMaior 		; Pausa dramática
+	call ApagaTela
+	call DelayMaior 
+
+	loadn r0, #565			; Posição que será impressa a string
+	loadn r1, #Msn5         ; "Nao nos resta mais nada aqui."
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	call DelayMaior
+	call DelayMaior 		; Pausa dramática
+	call ApagaTela
+	call DelayMaior
+
+	loadn r0, #562			; Posição que será impressa a string
+	loadn r1, #Msn6         ; "Vamos"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	loadn r0, #568			; Posição que será impressa a string
+	loadn r1, #Msn06         ; "APAGAR"
+	loadn r2, #5888			; Cor vermelha
+	call ImprimeStrDelay		
+
+	loadn r0, #575			; Posição que será impressa a string
+	loadn r1, #Msn006         ; "este mundo sem sentido"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	loadn r0, #648			; Posição que será impressa a string
+	loadn r1, #Msn7         ; "e seguir para o"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+		
+	loadn r0, #664			; Posição que será impressa a string
+	loadn r1, #Msn07         ; "PROXIMO"
+	loadn r2, #5888			; Cor vermelha
+	call ImprimeStrDelay
+
+	loadn r0, #671			; Posição que será impressa a string
+	loadn r1, #Msn007       ; "."
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	call DelayMaior
+	call DelayMaior
+	call DelayMaior 		; Pausa muito dramática
+	call DelayMaior
+	call ApagaTela
+	call DelayMaior
+
+	loadn r0, #450			; Posição que será impressa a string
+	loadn r1, #Msn8         ; "APAGAR"
+	loadn r2, #5888			; Cor vermelha
+	call ImprimeStrDelay
+
+	loadn r0, #457			; Posição que será impressa a string
+	loadn r1, #Msn08        ; "esse mundo e"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	loadn r0, #529			; Posição que será impressa a string
+	loadn r1, #Msn008       ; "seguir para o"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	loadn r0, #543			; Posição que será impressa a string
+	loadn r1, #Msn0008      ; "PROXIMO"
+	loadn r2, #5888			; Cor vermelha
+	call ImprimeStrDelay
+
+	loadn r0, #550			; Posição que será impressa a string
+	loadn r1, #Msn00008     ; "?"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	loadn r0, #657			; Posição que será impressa a string
+	loadn r1, #Msn09        ; "<s/n>"
+	loadn r2, #5888			; Cor vermelha
+	call ImprimeStrDelay
+
+	call DelayMaior
+
+	loadn r0, #771			; Posição que será impressa a string
+	loadn r1, #Msn9       	; "(Jogar novamente?)"
+	loadn r2, #0			; Cor branca
+	call ImprimeStrDelay
+
+	Vitoria_Loop:
+
+		; Espera o Player digitar 's' ou 'n'
+		call DigLetra
+
+		loadn r0, #'n'
+		load r1, Letra
+		cmp r0, r1	            ; Verifica se o Player digitou 'n'
+		jeq Vitoria_FimDeJogo   ; Se o Player digitar 'n'
+
+		loadn r0, #'s'
+		cmp r0, r1              ; Verifica se o Player digitou 's'
+		jne Vitoria_Loop        ; Se não digitou nenhum dos dois, loopa e verifica de novo
+        
+		call ApagaTela          ; Se o Player digitar 's'
+		call DelayMaior
+
+		loadn r0, #615			; Posição que será impressa a string
+		loadn r1, #Msn10        ; "MUITO BEM."
+		loadn r2, #5888			; Cor vermelha
+		call ImprimeStrDelay
+
+		call DelayMaior
+		call DelayMaior 		; Pausa dramática
+		call ApagaTela
+		call DelayMaior
+
+		pop r2
+		pop r1
+		pop r0
+		pop r0					; Dá um pop a mais para acertar o ponteiro da pilha, pois não vai dar o RTS  (sem isso, dps de vários restarts, a pilha seria apagada por completo)
+		
+		jmp main 				; Reinicia o programa
+
+
+	Vitoria_FimDeJogo:
+
+		; Se o Player digitar 'n'
+		call ApagaTela
+		call DelayMaior
+
+		loadn r0, #578			; Posição que será impressa a string
+		loadn r1, #Msn11        ; "..."
+		loadn r2, #0			; Cor branca
+		call ImprimeStrDelay
+
+		call DelayMaior 		; Pausa dramática
+		call ApagaTela
+		call DelayMaior
+
+		loadn r0, #574			; Posição que será impressa a string
+		loadn r1, #Msn12        ; "Que curioso."
+		loadn r2, #0			; Cor branca
+		call ImprimeStrDelay
+
+		call DelayMaior 		; Pausa dramática
+		call ApagaTela
+		call DelayMaior
+
+		loadn r0, #565			; Posição que será impressa a string
+		loadn r1, #Msn13        ; "Voce deve ter entendido errado."
+		loadn r2, #0			; Cor branca
+		call ImprimeStrDelay
+
+		call DelayMaior
+		call DelayMaior 		; Pausa dramática
+		call ApagaTela
+		call DelayMaior
+
+		loadn r0, #565			; Posição que será impressa a string
+		loadn r1, #Msn14        ; "VOCE NUNCA ESTEVE NO CONTROLE."
+		loadn r2, #5888			; Cor vermelha
+		call ImprimeStrDelay
+
+		call DelayMaior
+		call DelayMaior 		; Pausa dramática
+		call ApagaTela
+
+		loadn r1, #tela3Linha0	; Endereço da primeira linha da tela 3
+		loadn r2, #5888   		; Determina a cor
+		call ImprimeTela   		; Rotina de impressão de cenário na tela inteira
+
+		halt 					; Para o programa
+   
+;----------------------------------
+
+;********************************************************
+;                      DELAY
+;********************************************************		
+
+; Os delays foram ajustados para 10 MHz
+
+Delay:
+
+	push r0
+	push r1
+	
+	loadn r0, #20000				; Define o tempo de delay do primeiro loop (Máximo por registrador = 64000)
+	loadn r1, #5					; Define a quantidade de loops que ocorrerão, efetivamente multiplicando o delay em x
+
+    Delay_Loop1:	
+	
+		dec r0
+		jnz DelayMaior_Loop1
+
+	Delay_Loop2:
+
+		loadn r0, #20000			; Redefine o valor de r0 para o loop
+        dec r1
+        jnz DelayMaior_Loop1 		; ,60000 x 5 = 300000 --> ~0,3s em um clock de 1MHz
+		
+	pop r1
+	pop r0
+	
+	rts							
+
+DelayMenor:
+
+	push r0
+	push r1
+	
+	loadn r0, #8000				; Define o tempo de delay do primeiro loop (Máximo por registrador = 64000)
+	loadn r1, #3					; Define a quantidade de loops que ocorrerão, efetivamente multiplicando o delay em x
+
+    DelayMenor_Loop1:	
+	
+		dec r0
+		jnz DelayMaior_Loop1
+
+	DelayMenor_Loop2:
+
+		loadn r0, #8000			; Redefine o valor de r0 para o loop
+        dec r1
+        jnz DelayMaior_Loop1 		; ,60000 x 5 = 300000 --> ~0,3s em um clock de 1MHz
+		
+	pop r1
+	pop r0
+	
+	rts
+
+DelayMaior:	
+
+	push r0
+	push r1
+	
+	loadn r0, #60000				; Define o tempo de delay do primeiro loop (Máximo por registrador = 64000)
+	loadn r1, #50					; Define a quantidade de loops que ocorrerão, efetivamente multiplicando o delay em x
+
+    DelayMaior_Loop1:	
+	
+		dec r0
+		jnz DelayMaior_Loop1
+
+	DelayMaior_Loop2:
+
+		loadn r0, #60000			; Redefine o valor de r0 para o loop
+        dec r1
+        jnz DelayMaior_Loop1 		; ,60000 x 5 = 300000 --> ~0,3s em um clock de 1MHz
+		
+	pop r1
+	pop r0
+	
+	rts
+
+;-------------------------------
+	
+;********************************************************
+;                       IMPRIME TELA
+;********************************************************	
+
+ImprimeTela: 	;  Rotina de impressão de cenário na tela inteira
+				;  r1 = endereço em que começa a primeira linha do cenário
+				;  r2 = cor do cenário para ser impresso
+
+	push r0	
+	push r1	
+	push r2	
+	push r3	
+	push r4	
+	push r5	
+
+	loadn r0, #0  	; Posição inicial = começo da tela
+	loadn r3, #40  	; Incremento de linha
+	loadn r4, #41  	; Incremento do ponteiro das linhas da tela (é 41 por causa do '\0' no final da string)
+	loadn r5, #1200 ; Posição final = fim da tela
+	
+   ImprimeTela_Loop:
+		call ImprimeStr
+		add r0, r0, r3  	; Incrementa a posição para a próxima linha da tela -->  r0 = r0 + 40
+		add r1, r1, r4  	; Incrementa o ponteiro para o comeco da próxima linha na memória (40 + 1 por causa do /0 !!) --> r1 = r1 + 41
+		cmp r0, r5			; Compara r0 com 1200 (fim da tela)
+		jne ImprimeTela_Loop	; Enquanto r0 < 1200, continua o loop
+
+	pop r5	
+	pop r4
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+
+	rts
+				
+;---------------------
+
+;********************************************************
+;                   IMPRIME STRING
+;********************************************************
+	
+ImprimeStr:	;  Rotina de impressão de mensagens:    r0 = Posicao da tela que o primeiro caractere da mensagem será impresso;  r1 = endereço em que comeca a mensagem; r2 = cor da mensagem.   Obs: a mensagem será impressa até encontrar "\0"
+	
+    push r0	
+	push r1	
+	push r2	
+	push r3	
+	push r4	
+	
+	loadn r3, #'\0'	; Critério de parada
+
+   ImprimeStr_Loop:	
+		
+        loadi r4, r1    ; r4 recebe o endereço do início da string (cenário)
+		cmp r4, r3		; Se o caractere for '\0', sai do loop
+		jeq ImprimeStr_Sai
+		add r4, r2, r4	; Soma a cor
+		outchar r4, r0	; Imprime o caractere na tela
+		inc r0			; Incrementa a posição na tela
+		inc r1			; Incrementa o ponteiro da string
+		jmp ImprimeStr_Loop
+	
+   ImprimeStr_Sai:	
+    
+    pop r4	
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+
+	rts
+	
+;------------------------
+
+;********************************************************
+;                       IMPRIME TELA 2
+;********************************************************	
+
+ImprimeTela2: 	;  Rotina de impressão de cenário da tela inteira
+		;  r1 = endereço em que começa a primeira linha do cenário
+		;  r2 = cor do cenário para ser impresso
+
+	push r0
+	push r1
+	push r2	
+	push r3	
+	push r4	
+	push r5	
+	push r6	
+
+	loadn r0, #0  	; Posição inicial = começo da tela
+	loadn r3, #40  	; Incremento de linha
+	loadn r4, #41  	; Incremento do ponteiro das linhas da tela
+	loadn r5, #1200 ; Posição final = fim da tela
+	loadn r6, #tela0Linha0	; Endereco em que começa a primeira linha do cenário (no final do código)
+	
+   ImprimeTela2_Loop:
+
+		call ImprimeStr2
+		add r0, r0, r3  	; Incrementa a posição para a próxima linha da tela -->  r0 = r0 + 40
+		add r1, r1, r4  	; Incrementa o ponteiro para o começo da próxima linha na memória (40 + 1 por causa do /0 !!) --> r1 = r1 + 41
+		add r6, r6, r4  	; Incrementa o ponteiro para o começo da próxima linha na memória (40 + 1 por causa do /0 !!) --> r1 = r1 + 41
+		cmp r0, r5			; Compara r0 com 1200 (fim da tela)
+		jne ImprimeTela2_Loop	; Enquanto r0 < 1200, continua o loop
+
+	pop r6	
+	pop r5
+	pop r4
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+
+	rts
+				
+;---------------------
+
+;********************************************************
+;                   IMPRIME STRING2
+;********************************************************
+	
+ImprimeStr2:	;  Rotina de impressão de mensagens:    r0 = Posição da tela em que o primeiro caractere da mensagem será impresso;  r1 = endereço em que começa a mensagem; r2 = cor da mensagem.   Obs: a mensagem será impressa até encontrar "/0"
+	
+    push r0	
+	push r1	
+	push r2	
+	push r3	
+	push r4	
+	push r5	
+	push r6	
+	
+	
+	loadn r3, #'\0'	; Critério de parada
+	loadn r5, #' '	; Espaço em branco
+	;loadn r6, #MemoriaDeCenario
+
+    ImprimeStr2_Loop:	
+		
+        loadi r4, r1    ; r4 recebe o endereço do início da string (cenário)
+		cmp r4, r3		; Se o caractere for '\0', sai do loop
+		jeq ImprimeStr2_Sai
+		cmp r4, r5		; Se o caractere for ' ' (vazio), pula o outchar para não apagar outros caracteres
+		jeq ImprimeStr2_Skip
+		add r4, r2, r4	; Soma a Cor
+		outchar r4, r0	; Imprime o caractere na tela
+   		storei r6, r4
+
+    ImprimeStr2_Skip:
+		
+        inc r0			; Incrementa a posição da tela
+		inc r1			; Incrementa o ponteiro da string
+		inc r6          ; Incrementa o ponteiro da string
+		jmp ImprimeStr2_Loop
+	
+    ImprimeStr2_Sai:	
+	
+    pop r6
+	pop r5
+	pop r4
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+	
+    rts
+	
+
+;------------------------
+
+;********************************************************
+;              IMPRIME STRING COM DELAY
+;********************************************************
+	
+ImprimeStrDelay:	;  Rotina de impressão de mensagens:    r0 = Posição da tela em que o primeiro caractere da mensagem será impresso;  r1 = endereço em que começa a mensagem; r2 = cor da mensagem.   Obs: a mensagem será impressa até encontrar "/0"
+
+    push r0	
+	push r1	
+	push r2	
+	push r3	
+	push r4	
+	
+	loadn r3, #'\0'	; Critério de parada
+
+   ImprimeStrDelay_Loop:	
+		
+        loadi r4, r1    ; r4 recebe o endereço do início da string (cenário)
+		cmp r4, r3		; Se o caractere for '\0', sai do loop
+		jeq ImprimeStrDelay_Sai
+		add r4, r2, r4	; Soma a cor
+		outchar r4, r0	; Imprime o caractere na tela
+		inc r0			; Incrementa a posição na tela
+		inc r1			; Incrementa o ponteiro da string
+		call DelayMenor	; Chama a função de delay, é o que faz as letras aparecerem aos poucos, como num diálogo
+		jmp ImprimeStrDelay_Loop
+	
+   ImprimeStrDelay_Sai:	
+    
+    pop r4	
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+
+	rts
+	
+;------------------------
+
+;********************************************************
+;                    INICIA JOGO
+;********************************************************
+
+IniciaJogo:
+	
+	push r0
+	push r1
+	push r2
+
+	loadn r0, #526			; Posição que será impressa a string
+    loadn r1, #Msn0         ; "Pressione" 
+    loadn r2, #0			; Cor branca
+    call ImprimeStrDelay
+
+	loadn r0, #536			; Posição que será impressa a string
+    loadn r1, #Msn01        ; "ENTER"
+    loadn r2, #5888			; Cor vermelha
+    call ImprimeStrDelay
+
+	loadn r0, #542			; Posição que será impressa a string
+    loadn r1, #Msn001       ; "."
+    loadn r2, #0			; Cor branca
+    call ImprimeStrDelay
+
+	IniciaJogo_Loop:
+
+		call DigLetra
+		loadn r0, #13
+		load r1, Letra
+		cmp r0, r1		
+		jne IniciaJogo_Loop
+		jeq IniciaJogo_Fim	; Somente quando a tecla pressionada for 'enter' inicia o jogo
+
+	IniciaJogo_Fim:
+
+	pop r2
+	pop r1
+	pop r0
+
+	rts
+
+;--------------------------
+
+;********************************************************
+;                   DIGITE UMA LETRA
+;********************************************************
+
+DigLetra:	; Espera que uma tecla seja digitada e salva na variavel global "Letra"
+
+	push r0
+	push r1
+    push r2
+
+    loadn r1, #0	; Se não digitar nada, fica 0
+    loadn r2, #255  ; Quando para de digitar, fica 255
+
+    DigLetra_Loop:
+		inchar r0			; Le o teclado, se nada for digitado = 0, mas quando para de digitar, = 255
+		cmp r0, r1			; Compara r0 com 0
+		jeq DigLetra_Loop	; Fica lendo até que o usuário digite uma tecla válida
+        cmp r0, r2          ; Compara r0 com 255
+        jeq DigLetra_Loop   ; Continua lendo até que o usuário volte a digitar
+
+	store Letra, r0			; Salva a tecla na variável global "Letra"
+    ; obs.: inicializar variável "Letra" no começo do código
+
+    pop r2
+	pop r1
+	pop r0
+
+	rts
+
+;----------------
+
+;********************************************************
+;                       APAGA TELA
+;********************************************************
+
+ApagaTela:
+
+	push r0
+	push r1
+	
+	loadn r0, #1200 ; Posições do outchar
+	loadn r1, #' '	; Caractere usado no outchar
+	
+	   ApagaTela_Loop: 		; Loop que apagará a tela do fim (posição 1199) ao início (posição 0)
+		dec r0 				; r0 começa em 1200 e diminui por 1 a cada loop
+		outchar r1, r0 		; O caractere ' ' é colocado na posição dada por r0
+		jnz ApagaTela_Loop 	; Enquanto r0 não for 0 (posição 0), o loop continua
+ 
+	pop r1
+	pop r0
+
+	rts	
+	
+;------------------------	
+
+;********************************************************
+;               TELAS A SEREM IMPRESSAS
+;********************************************************
+
+; Tela vazia --> Pra usar como base
+tela0Linha0  : string "                                        "
+tela0Linha1  : string "                                        "
+tela0Linha2  : string "                                        "
+tela0Linha3  : string "                                        "
+tela0Linha4  : string "                                        "
+tela0Linha5  : string "                                        "
+tela0Linha6  : string "                                        "
+tela0Linha7  : string "                                        "
+tela0Linha8  : string "                                        "
+tela0Linha9  : string "                                        "
+tela0Linha10 : string "                                        "
+tela0Linha11 : string "                                        "
+tela0Linha12 : string "                                        "
+tela0Linha13 : string "                                        "
+tela0Linha14 : string "                                        "
+tela0Linha15 : string "                                        "
+tela0Linha16 : string "                                        "
+tela0Linha17 : string "                                        "
+tela0Linha18 : string "                                        "
+tela0Linha19 : string "                                        "
+tela0Linha20 : string "                                        "
+tela0Linha21 : string "                                        "
+tela0Linha22 : string "                                        "
+tela0Linha23 : string "                                        "
+tela0Linha24 : string "                                        "
+tela0Linha25 : string "                                        "
+tela0Linha26 : string "                                        "
+tela0Linha27 : string "                                        "
+tela0Linha28 : string "                                        "
+tela0Linha29 : string "                                        "	
+
+
+
+; Tela da Arena
+tela1Linha0  : string "                                        "
+tela1Linha1  : string "                                        "
+tela1Linha2  : string "                                        "
+tela1Linha3  : string "                                        "
+tela1Linha4  : string "                                        "
+tela1Linha5  : string "          }}}}}}}}}}}}}}}}}}}}          "
+tela1Linha6  : string "          }                  }          "
+tela1Linha7  : string "          }                  }          "
+tela1Linha8  : string "          }                  }          "
+tela1Linha9  : string "          }                  }          "
+tela1Linha10 : string "          }                  }          "
+tela1Linha11 : string "          }                  }          "
+tela1Linha12 : string "          }                  }          "
+tela1Linha13 : string "          }                  }          "
+tela1Linha14 : string "          }                  }          "
+tela1Linha15 : string "          }                  }          "
+tela1Linha16 : string "          }                  }          "
+tela1Linha17 : string "          }                  }          "
+tela1Linha18 : string "          }                  }          "
+tela1Linha19 : string "          }                  }          "
+tela1Linha20 : string "          }                  }          "
+tela1Linha21 : string "          }                  }          "
+tela1Linha22 : string "          }                  }          "
+tela1Linha23 : string "          }                  }          "
+tela1Linha24 : string "          }}}}}}}}}}}}}}}}}}}}          "
+tela1Linha25 : string "                                        "
+tela1Linha26 : string "                                        "
+tela1Linha27 : string "                                        "
+tela1Linha28 : string "                                        "
+tela1Linha29 : string "                                        "
+
+
+
+; Tela de GAME OVER
+tela2Linha0  : string "                                        "
+tela2Linha1  : string "                                        "
+tela2Linha2 :  string "                                        "
+tela2Linha3  : string "                                        "
+tela2Linha4  : string "      }}}}    }}}}    }  }   }}}}}}     "
+tela2Linha5  : string "     }       }    }  } }} }  }          "
+tela2Linha6  : string "     }  }}   }}}}}}  } }} }  }}}}}      "
+tela2Linha7  : string "     }    }  }    }  }    }  }          "
+tela2Linha8  : string "      }}}}   }    }  }    }  }}}}}}     "
+tela2Linha9  : string "                                        "
+tela2Linha10 : string "      }}}}   }    }  }}}}}}  }}}}}      "
+tela2Linha11 : string "     }    }  }    }  }       }    }     "
+tela2Linha12 : string "     }    }   }  }   }}}}}   }}}}}      "
+tela2Linha13 : string "     }    }   }  }   }       }   }      "
+tela2Linha14 : string "      }}}}     }}    }}}}}}  }    }     "
+tela2Linha15 : string "                                        "
+tela2Linha16 : string "                                        "
+tela2Linha17 : string "                                        "
+tela2Linha18 : string "                                        "
+tela2Linha19 : string "                                        "
+tela2Linha20 : string "                                        "
+tela2Linha21 : string "                                        "
+tela2Linha22 : string "                                        "
+tela2Linha23 : string "                                        "
+tela2Linha24 : string "                                        "
+tela2Linha25 : string "                                        "
+tela2Linha26 : string "                                        "
+tela2Linha27 : string "                                        "
+tela2Linha28 : string "                                        "
+tela2Linha29 : string "                                        "
+
+
+
+; Tela de HAHAHA's
+tela3Linha0  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha1  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha2  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha3  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha4  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha5  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha6  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha7  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha8  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha9  : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha10 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha11 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha12 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha13 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha14 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha15 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha16 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha17 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha18 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha19 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha20 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha21 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha22 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha23 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha24 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha25 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha26 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha27 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha28 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+tela3Linha29 : string "HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA"
+
+
+
+; Projeto feito por Mateus Augusto Silva de Carvalho, Higor Campos Fernandes e Andre Marcelino Watanabe
