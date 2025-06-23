@@ -15,8 +15,6 @@
    - Na janela **Files**, clique com o **botão direito**  
    - Selecione **"Novo arquivo"**
 
-   ![Ícone de novo arquivo](https://cdn-icons-png.flaticon.com/512/1828/1828911.png)
-
 3. 💻 **Abra o editor de código:**  
    - Na lista de arquivos, clique no novo arquivo que foi criado  
    - Isso abrirá a aba do **Source Editor**
@@ -25,14 +23,12 @@
    - Abra o arquivo `JogoFinal.txt`  
    - Copie tudo e cole dentro do **Source Editor**
 
-   ![Editor de código](https://cdn-icons-png.flaticon.com/512/906/906324.png)
-
+  
 5. 🛠️ **Compile e execute:**  
    - Clique no botão **Build** 🧱  
    - Vá para a aba **State** e clique em **Run** ▶️  
    - Ajuste o processador para **10 MHz**
 
-   ![Botão play](https://cdn-icons-png.flaticon.com/512/727/727245.png)
 
 ---
 
@@ -46,7 +42,6 @@
 
 ## 🧠 Objetivo do Jogo
 
-![Coração fugindo](https://cdn-icons-png.flaticon.com/512/3534/3534060.png)
 
 - ⚡ O coração precisa **escapar dos raios** que aparecem com base nas **barras laterais**
 - 🧱 Essas barras estão nas extremidades do quadro do jogo
