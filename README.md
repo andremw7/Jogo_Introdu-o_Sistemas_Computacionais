@@ -55,6 +55,15 @@
 
 ---
 
+
+## 🎥 Apresentação em Vídeo
+
+Você pode assistir à apresentação do jogo e mais detalhes sobre o código em Assembly no YouTube clicando no link abaixo:
+
+👉 [Assista à demonstração do jogo no YouTube](https://www.youtube.com/watch?v=n5rhu3o-SMw)
+
+---
+
 ### ✅🧑‍💻 Bom jogo!  
 
 
