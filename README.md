@@ -1,6 +1,5 @@
 #  ⛷️ Instruções para executar o jogo
 
-
 ---
 
 ## 🕹️ Como Rodar o Jogo
@@ -22,12 +21,21 @@
    - Abra o arquivo `JogoFinal.txt`  
    - Copie tudo e cole dentro do **Source Editor**
 
-  
 5. 🛠️ **Compile e execute:**  
    - Clique no botão **Build** 🧱  
    - Vá para a aba **State** e clique em **Run** ▶️  
    - Ajuste o processador para **10 MHz**
 
+---
+
+## ✨ Caracteres Personalizados para o Jogo
+
+Para garantir que os gráficos do jogo sejam exibidos corretamente:
+
+1. 🎨 Clique no botão à esquerda da página com o nome **"Screen Editor"**
+2. 📥 Ao abrir o editor de caracteres, clique em **"Importar"**
+3. 🗂️ Selecione o arquivo `undertale_charmap(1).mif`  
+   (esse arquivo contém os caracteres personalizados do jogo)
 
 ---
 
@@ -40,7 +48,6 @@
 ---
 
 ## 🧠 Objetivo do Jogo
-
 
 - ⚡ O coração precisa **escapar dos raios** que aparecem com base nas **barras laterais**
 - 🧱 Essas barras estão nas extremidades do quadro do jogo
@@ -55,7 +62,6 @@
 
 ---
 
-
 ## 🎥 Apresentação em Vídeo
 
 Você pode assistir à apresentação do jogo e mais detalhes sobre o código em Assembly no YouTube clicando no link abaixo:
@@ -65,6 +71,5 @@ Você pode assistir à apresentação do jogo e mais detalhes sobre o código em
 ---
 
 ### ✅🧑‍💻 Bom jogo!  
-
 
 ---
